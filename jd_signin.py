@@ -1,7 +1,7 @@
 import os
 import requests
 
-def jd_request(function_id, cookie):
+def jd_request(function_id, cookie, body="{}"):
     url = "https://api.m.jd.com/client.action"
     headers = {
         "Cookie": cookie,
@@ -13,7 +13,8 @@ def jd_request(function_id, cookie):
         "functionId": function_id,
         "appid": "ld",
         "clientVersion": "9.2.0",
-        "client": "android"
+        "client": "android",
+        "body": body
     }
     resp = requests.get(url, headers=headers, params=params)
     if resp.status_code == 200:
@@ -22,15 +23,14 @@ def jd_request(function_id, cookie):
         return {"error": f"HTTP {resp.status_code}"}
 
 def jd_signin(cookie):
-    # 尝试多个签到接口
-    for func in ["signBeanIndex", "taskBean", "beanTaskList"]:
-        data = jd_request(func, cookie)
-        print(f"接口 {func} 返回：{data}")
-        # 简单判断是否签到成功
-        if "data" in data and ("dailyAward" in data["data"] or "beanNum" in str(data)):
-            print("✅ 签到成功，可能已获得京豆")
-            return
-    print("⚠️ 未能成功签到，请检查 Cookie 是否有效")
+    # 首页秒杀签到
+    seckill_data = jd_request("seckillSign", cookie)
+    print("首页秒杀签到返回：", seckill_data)
+
+    # 幸运签到
+    lucky_data = jd_request("signBeanAct", cookie,
+                            body='{"fp":"-1","shshshfp":"-1","shshshfpa":"-1"}')
+    print("幸运签到返回：", lucky_data)
 
 if __name__ == "__main__":
     pt_key = os.getenv("JD_PT_KEY")
